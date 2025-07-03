@@ -2,8 +2,11 @@ import subprocess
 import sys
 import os
 from colorama import Fore, Style
+from dotenv import load_dotenv
 
-EXCEL_PATH = r"C:\Personal\Documents\ICON\Work Logs\Allan Adan - Work Activities, Tickets, and KPI.xlsx"
+load_dotenv()  # Loads variables from .env into environment
+
+EXCEL_PATH = os.getenv("EXCEL_PATH")
 
 def run_script(script_name):
     try:

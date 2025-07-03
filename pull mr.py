@@ -7,6 +7,7 @@ import logging
 from colorama import init, Fore, Style
 from tabulate import tabulate
 from dotenv import load_dotenv
+import math
 
 load_dotenv()  # Loads variables from .env into environment
 
@@ -152,8 +153,15 @@ def get_jira_details(jira_keys, jira_excel_path, jira_sheet_name="JIRA Tickets")
         for key in [k.strip() for k in jira_keys.split(";") if k.strip()]:
             match = jira_df[jira_df["Key"] == key]
             if not match.empty:
-                summaries.append(str(match.iloc[0].get("Summary", "")))
-                descriptions.append(str(match.iloc[0].get("Description", "")))
+                summary = match.iloc[0].get("Summary", "")
+                description = match.iloc[0].get("Description", "")
+                # Replace NaN with empty string
+                if pd.isna(summary):
+                    summary = ""
+                if pd.isna(description):
+                    description = ""
+                summaries.append(str(summary))
+                descriptions.append(str(description))
         return " | ".join(summaries) if summaries else "None", " | ".join(descriptions) if descriptions else "None"
     except Exception as e:
         print(f"{Fore.YELLOW}⚠️ Could not fetch JIRA details for {jira_keys}: {e}{Style.RESET_ALL}")
@@ -177,7 +185,16 @@ if flat_data:
             "JIRA Summary": jira_summary,
             "JIRA Description": jira_description,
         }
-        print(f"{Fore.CYAN}🔹 Merge Request #{mr.get('MR Number', 'N/A')} for Ticket {jira_keys}{Style.RESET_ALL}")
+        # Choose emoji based on MR state
+        state_emoji = {
+            "opened": "🟢",
+            "merged": "🟣",
+            "closed": "🔴",
+            "locked": "🔒"
+        }
+        mr_state = mr.get("State", "").lower()
+        emoji = state_emoji.get(mr_state, "🔹")
+        print(f"{Fore.CYAN}{emoji} Merge Request #{mr.get('MR Number', 'N/A')} for Ticket {jira_keys} [{mr_state.capitalize() if mr_state else 'N/A'}]{Style.RESET_ALL}")
         print(tabulate(details.items(), tablefmt="plain"))
         print("-" * 60)
 
